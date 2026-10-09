@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Key, Loader2, Zap } from 'lucide-react';
-import { generateQuestionHint } from '../services/ai';
+import {  Zap } from 'lucide-react';
 import type { Question } from '../types/quiz';
 
 interface QuizCardProps {

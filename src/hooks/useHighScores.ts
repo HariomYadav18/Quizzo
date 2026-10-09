@@ -1,40 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import type { PlayerScore, QuizSessionMetrics } from '../types/quiz';
+
+const STORAGE_KEY = 'quizzo_high_scores_v1';
 
 export function useHighScores() {
   const [highScores, setHighScores] = useState<PlayerScore[]>([]);
 
-  // Load scores on mount
   useEffect(() => {
-    const stored = localStorage.getItem('quick-quiz-telemetry');
-    if (stored) {
-      try {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
         setHighScores(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse telemetry data');
       }
+    } catch (e) {
+      console.error('Failed to load high scores', e);
     }
   }, []);
 
-  const saveScore = useCallback((name: string, metrics: QuizSessionMetrics) => {
+  const saveScore = (name: string, metrics: QuizSessionMetrics) => {
+    const accuracy = metrics.totalQuestions > 0 
+      ? Math.round((metrics.correctAnswers / metrics.totalQuestions) * 100) 
+      : 0;
+
     const newScore: PlayerScore = {
-      id: crypto.randomUUID(),
+      id: Math.random().toString(36).substring(2, 9),
       name,
       score: metrics.score,
-      accuracy: Math.round((metrics.correctAnswers / metrics.totalQuestions) * 100),
-      timestamp: new Date().toISOString(),
+      accuracy,
+      timestamp: Date.now(), // Changed to Date.now() to return a number
     };
 
-    setHighScores((prev) => {
-      // Add new score, sort descending by score, and keep only the top 10
-      const updated = [...prev, newScore]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
-      
-      localStorage.setItem('quick-quiz-telemetry', JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+    const updated = [newScore, ...highScores]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10); // Keep top 10
+
+    setHighScores(updated);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save high score', e);
+    }
+  };
 
   return { highScores, saveScore };
 }

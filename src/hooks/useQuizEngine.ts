@@ -31,7 +31,6 @@ export function useQuizEngine() {
   const availableTopics = useMemo(() => Array.from(new Set(allQuestions.map(q => q.category))) as string[], []);
 
   const startQuiz = useCallback((selectedTopic: string = 'All', questionCount: number = 10, apiKey?: string) => {
-    // Instantiate Web Worker dynamically
     const worker = new Worker(new URL('../workers/quizWorker.ts', import.meta.url), { type: 'module' });
     
     worker.onmessage = (e) => {
@@ -41,14 +40,21 @@ export function useQuizEngine() {
         status: 'active',
         questions: finalQuestions,
         currentIndex: 0,
-        apiKey, // Store key for adaptive triggers
+        apiKey,
         metrics: { ...initialMetrics, totalQuestions: finalQuestions.length, startTime: now },
       });
       questionStartTime.current = now;
-      worker.terminate(); // Clean up worker
+      worker.terminate();
     };
 
     worker.postMessage({ questions: allQuestions, topic: selectedTopic, count: questionCount });
+  }, []);
+
+  const loadDynamicQuestions = useCallback((newQuestions: Question[]) => {
+    setState(prev => ({
+      ...prev,
+      questions: newQuestions
+    }));
   }, []);
 
   const answerQuestion = useCallback(async (selectedAnswer: 1 | 2 | 3 | 4, hesitation: number) => {
@@ -61,11 +67,9 @@ export function useQuizEngine() {
       const timeTakenMs = Date.now() - questionStartTime.current;
       const isLastQuestion = prev.currentIndex === prev.questions.length - 1;
 
-      // Adaptive Difficulty Logic: Trigger if fast (< 4s) and correct
       const isPerformingExceptionally = isCorrect && timeTakenMs < 4000;
       
       if (isPerformingExceptionally && prev.apiKey && !isLastQuestion) {
-        // Fire & Forget Adaptive Generation (will push into array when ready)
         generateAdaptiveQuestion(currentQ.category || 'General', prev.apiKey)
           .then((hardQ) => {
             setState(s => ({
@@ -73,7 +77,7 @@ export function useQuizEngine() {
               questions: [...s.questions.slice(0, s.currentIndex + 2), hardQ, ...s.questions.slice(s.currentIndex + 2)],
               metrics: { ...s.metrics, totalQuestions: s.metrics.totalQuestions + 1, adaptiveTriggers: s.metrics.adaptiveTriggers + 1 }
             }));
-          }).catch(() => console.log('Adaptive generation skipped due to error.'));
+          }).catch(() => {});
       }
 
       const updatedMetrics: QuizSessionMetrics = {
@@ -100,5 +104,13 @@ export function useQuizEngine() {
     setState({ status: 'idle', questions: [], currentIndex: 0, metrics: initialMetrics });
   }, []);
 
-  return { ...state, currentQuestion: state.questions[state.currentIndex], availableTopics, startQuiz, answerQuestion, resetQuiz };
+  return { 
+    ...state, 
+    currentQuestion: state.questions[state.currentIndex], 
+    availableTopics, 
+    startQuiz, 
+    answerQuestion, 
+    resetQuiz,
+    loadDynamicQuestions 
+  };
 }

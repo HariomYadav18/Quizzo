@@ -7,7 +7,7 @@ export interface Question {
   choice3: string;
   choice4: string;
   answer: 1 | 2 | 3 | 4;
-  isAdaptive?: boolean; // Flags harder questions injected mid-quiz
+  isAdaptive?: boolean;
 }
 
 export interface QuizSessionMetrics {
@@ -17,8 +17,8 @@ export interface QuizSessionMetrics {
   startTime: number;
   endTime: number | null;
   timePerQuestionMs: number[];
-  hesitationMs: number[]; // Tracks how long users hovered before clicking
-  adaptiveTriggers: number; // Tracks how many times the AI scaled difficulty
+  hesitationMs: number[];
+  adaptiveTriggers: number;
 }
 
 export interface QuizEngineState {
@@ -26,5 +26,13 @@ export interface QuizEngineState {
   questions: Question[];
   currentIndex: number;
   metrics: QuizSessionMetrics;
-  apiKey?: string; // Stored to allow mid-quiz background LLM generation
+  apiKey?: string;
+}
+
+export interface PlayerScore {
+  id: string;
+  name: string;
+  score: number;
+  accuracy: number;
+  timestamp: number;
 }

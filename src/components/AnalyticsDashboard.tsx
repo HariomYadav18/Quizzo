@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { RotateCcw, Activity, Clock, Target, Sparkles, Key, Loader2, Save } from 'lucide-react';
+import { RotateCcw, Activity, Sparkles, Key, Loader2, Save } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { generatePostQuizAnalysis } from '../services/ai';
 import { useHighScores } from '../hooks/useHighScores';
